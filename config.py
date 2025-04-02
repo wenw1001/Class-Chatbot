@@ -9,7 +9,7 @@ LINE_CHANNEL_ACCESS_TOKEN = os.getenv('LINE_CHANNEL_ACCESS_TOKEN', '')
 LINE_CHANNEL_SECRET = os.getenv('LINE_CHANNEL_SECRET', '')
 
 # Ollama 模型配置
-OLLAMA_MODEL = os.getenv('OLLAMA_MODEL', 'llama2')
+OLLAMA_MODEL = os.getenv('OLLAMA_', 'deepseek-r1')
 
 # Webhook 配置
 WEBHOOK_URL = os.getenv('WEBHOOK_URL', 'http://localhost:5000/webhook')
