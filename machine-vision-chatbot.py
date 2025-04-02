@@ -1,12 +1,16 @@
 import os
 from flask import Flask, request, abort
 import ollama
+import time
+import re
+from datetime import datetime, timedelta, timezone
 
 # 導入Line Bot V3 SDK
 from linebot.v3.messaging import Configuration, ApiClient, MessagingApi
 from linebot.v3.webhook import WebhookHandler
 from linebot.v3.exceptions import InvalidSignatureError
 from linebot.v3.webhooks import MessageEvent, TextMessageContent
+from linebot.v3.messaging.models import TextMessage, PushMessageRequest, BroadcastRequest
 
 # 引入配置
 from config import (
@@ -18,6 +22,17 @@ from config import (
 
 # Flask Web應用
 app = Flask(__name__)
+
+def get_taiwan_time():
+    """取得台灣時間 (GMT+8)"""
+    # 創建台灣時區 (UTC+8)
+    tw_timezone = timezone(timedelta(hours=8))
+    # 獲取目前UTC時間並轉換為台灣時間
+    tw_time = datetime.now(tw_timezone)
+    # 格式化時間字串
+    print(f"tw_time:{tw_time}")
+    print(f"now:{datetime.now()}")
+    return tw_time.strftime("%Y-%m-%d %H:%M:%S")
 
 class CourseAssistantBot:
     def __init__(self):
@@ -33,6 +48,7 @@ class CourseAssistantBot:
         
         # 使用配置中的Ollama模型
         self.ollama_model = OLLAMA_MODEL
+        print(f"OLLAMA_MODEL: {OLLAMA_MODEL}")
         
         # 課程相關知識庫
         self.course_info = {
@@ -44,17 +60,20 @@ class CourseAssistantBot:
     def send_startup_message(self):
         """在應用程式啟動時發送訊息"""
         try:
-            # 請替換 YOUR_USER_ID 為您的 Line 使用者 ID
-            self.line_messaging_api.push_message(
-                to='YOUR_USER_ID',
-                messages=[{
-                    'type': 'text', 
-                    'text': '🤖 機器視覺課程助教機器人已啟動！\n系統已就緒，歡迎使用。\n目前的Ollama模型：' + self.ollama_model
-                }]
+            # 使用broadcast方法發送給所有好友
+            broadcast_request = BroadcastRequest(
+                messages=[TextMessage(
+                    type='text',
+                    text='🤖 機器視覺課程助教機器人已啟動！\n台灣時間: ' + get_taiwan_time() + '\n目前Ollama模型: ' + self.ollama_model
+                )]
             )
-            print("啟動訊息已成功發送")
+            
+            # 發送訊息
+            self.line_messaging_api.broadcast(broadcast_request)
+            print("啟動訊息已成功廣播")
         except Exception as e:
             print(f"發送啟動訊息時發生錯誤: {e}")
+            print("==================================================")
     
     def add_announcement(self, announcement):
         """新增課程公告"""
@@ -76,7 +95,7 @@ class CourseAssistantBot:
                 messages=[
                     {
                         'role': 'system', 
-                        'content': '妳是機器視覺課程的助教機器人，專門回答學生的課程相關問題。'
+                        'content': '用中文簡短回答以下問題:' + user_query#'你是機器視覺課程的助教機器人，專門回答學生的課程相關問題。用繁體中文簡短回覆。'
                     },
                     {
                         'role': 'user', 
@@ -84,7 +103,9 @@ class CourseAssistantBot:
                     }
                 ]
             )
-            return response['message']['content']
+            
+            response = re.sub(r'.*?</think>\n*', '', response['message']['content'], flags=re.DOTALL)
+            return response
         
         except Exception as e:
             return f"生成回應時發生錯誤: {str(e)}"
@@ -94,27 +115,40 @@ course_bot = CourseAssistantBot()
 
 @app.route("/webhook", methods=['POST'])
 def webhook():
+    # print("進去webhook了")
     signature = request.headers['X-Line-Signature']
     body = request.get_data(as_text=True)
-    
+    # print(f"收到webhook請求: {body}")
     try:
         course_bot.handler.handle(body, signature)
     except InvalidSignatureError:
+        print("簽名驗證失敗")
         abort(400)
+    except Exception as e:
+        print(f"處理webhook時發生錯誤: {e}")
     
     return 'OK'
+
+@app.route("/test", methods=['GET'])
+def test():
+    return "機器視覺課程助教機器人運行中！"
 
 @course_bot.handler.add(MessageEvent, message=TextMessageContent)
 def handle_message(event):
     user_query = event.message.text
-    print(f"訊息: {user_query}")
+    user_id = event.source.user_id
+    print(f"{user_id} | 傳送訊息: {user_query}")
     response = course_bot.generate_response(user_query)
+    print(f"機器人回覆: {response}")
     
+    # replyToken=event.reply_token
+    # messages=TextMessage(text=response)
     try:
         course_bot.line_messaging_api.reply_message(
-            replyToken=event.replyToken,
-            messages=[{'type': 'text', 'text': response}]
-        )
+            replyToken=event.reply_token,
+            messages=[{'type': 'text', 'text': str(response)}]
+            )
+        
     except Exception as e:
         print(f"Reply message error: {e}")
 
@@ -146,4 +180,4 @@ if __name__ == '__main__':
     # 在啟動時發送訊息
     course_bot.send_startup_message()
 
-    app.run(port=5000)
+    app.run(host="0.0.0.0", port=5000)
