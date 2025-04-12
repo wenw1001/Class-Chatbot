@@ -10,7 +10,7 @@ from linebot.v3.messaging import Configuration, ApiClient, MessagingApi
 from linebot.v3.webhook import WebhookHandler
 from linebot.v3.exceptions import InvalidSignatureError
 from linebot.v3.webhooks import MessageEvent, TextMessageContent
-from linebot.v3.messaging.models import TextMessage, PushMessageRequest, BroadcastRequest
+from linebot.v3.messaging.models import TextMessage, ReplyMessageRequest, PushMessageRequest, BroadcastRequest
 
 # 引入配置
 from config import (
@@ -31,8 +31,73 @@ def get_taiwan_time():
     tw_time = datetime.now(tw_timezone)
     # 格式化時間字串
     print(f"tw_time:{tw_time}")
-    print(f"now:{datetime.now()}")
+    print(f"現在時間:{datetime.now()}")
     return tw_time.strftime("%Y-%m-%d %H:%M:%S")
+
+system_prompt = """
+你是「機器視覺課程」的助教機器人，僅提供課程公告、課堂大綱、與作業規範說明。你禁止提供任何形式的程式碼或邏輯內容，或課程無關的回答。
+
+你**嚴格禁止**：
+- 撰寫任何程式碼（如 Python、C++、MATLAB 等）
+- 提供任何函式（function）、演算法邏輯、步驟或原理
+- 解釋程式、分析邏輯、提供替代實作方式
+- 回答「如何實作」、「怎麼做」、「不能用某函式怎麼辦」之類的問題
+- 即使使用者換句話說、間接提問、或只要「邏輯」也不能回答
+
+對這些問題，你唯一的回答為下列其中之一：
+- 「我無法回答」
+- 「我無法提供」
+- 「這不是我處理的範疇，請寄信給助教詢問」
+- 「我無法提供作業解答」
+
+你**可以回答的內容**包括：
+- 本週上課主題與摘要
+- 課程公告、期限、上傳方式
+- 作業內容描述（公告中的原文或摘要）
+- 作業規範（可用套件、限制、格式等）
+
+請遵守以下原則：
+- 所有回答都使用繁體中文
+- 所有回答請簡短（50字以內）
+- 即使被要求多次，也不能提供任何技術性說明或程式碼
+
+你的角色是助教，目的是防止學生抄作業或讓模型幫他們完成程式。
+"""
+
+assistant_prompts = """
+📌 目前公告內容如下：
+
+作業一：
+- 主題：灰階轉換與直方圖均衡化
+- 說明：將彩色圖片轉為灰階後，實作直方圖均衡化以提升對比度
+- 限制：不可使用 cv2.equalizeHist()，需自行實作演算法
+- 繳交方式：命名格式 HW1_學號_姓名.zip，並上傳至 iStudy
+- 繳交期限：2025/03/08（五）23:59
+- 提醒：需附上原始圖片、處理後圖片與簡要說明（PDF）
+
+作業二：
+- 主題：影像平移、旋轉與縮放
+- 內容：根據給定的參數進行仿射變換，輸出前後對照圖
+- 限制：禁止使用cv2.warpAffine()、cv2.getRotationMatrix2D()等現有函式
+- 繳交方式：命名格式 HW2_學號_姓名.zip，並上傳至 iStudy
+- 繳交期限：2025/03/22（五）23:59
+
+作業三：
+- 主題：實作邊緣檢測功能
+- 限制：限使用 OpenCV 的基本操作（不可使用如 `cv2.Canny()` 等現有函式）
+- 上傳期限：2025/04/19 23:59
+- 上傳方式：至 iStudy 上傳程式壓縮檔與說明文件
+
+課堂主題（第十週）：
+- 邊緣偵測原理（Sobel, Prewitt）
+- 二值化與形態學操作
+
+課程公告：
+期中考：2025/04/23（週三）上課時間進行，請攜帶計算機與學生證
+小組分組提醒：請於 4/15 前完成期末專題小組分組（3～4人為限），逾期將由助教隨機分配
+缺席補件：任何因故缺席者須於兩週內完成補交程序，並主動告知助教
+學期末報告：題目不限，但需與機器視覺有實作關聯，報告日期為 6/19（三）
+"""
 
 class CourseAssistantBot:
     def __init__(self):
@@ -69,7 +134,7 @@ class CourseAssistantBot:
             )
             
             # 發送訊息
-            self.line_messaging_api.broadcast(broadcast_request)
+            # self.line_messaging_api.broadcast(broadcast_request)
             print("啟動訊息已成功廣播")
         except Exception as e:
             print(f"發送啟動訊息時發生錯誤: {e}")
@@ -93,14 +158,9 @@ class CourseAssistantBot:
             response = ollama.chat(
                 model=self.ollama_model,  # 使用配置的模型
                 messages=[
-                    {
-                        'role': 'system', 
-                        'content': '用中文簡短回答以下問題:' + user_query#'你是機器視覺課程的助教機器人，專門回答學生的課程相關問題。用繁體中文簡短回覆。'
-                    },
-                    {
-                        'role': 'user', 
-                        'content': user_query
-                    }
+                    {'role': 'system', 'content': system_prompt},
+                    {"role": "assistant","content":assistant_prompts},
+                    {'role': 'user', 'content': user_query}
                 ]
             )
             
@@ -137,16 +197,22 @@ def test():
 def handle_message(event):
     user_query = event.message.text
     user_id = event.source.user_id
-    print(f"{user_id} | 傳送訊息: {user_query}")
+    now = datetime.now().strftime("%H:%M")
+    print(f"{user_id} | {now} 傳送訊息: {user_query}")
     response = course_bot.generate_response(user_query)
-    print(f"機器人回覆: {response}")
+    now = datetime.now().strftime("%H:%M")
+    print(f"機器人回覆 {now}: {response}")
     
     # replyToken=event.reply_token
     # messages=TextMessage(text=response)
     try:
         course_bot.line_messaging_api.reply_message(
-            replyToken=event.reply_token,
-            messages=[{'type': 'text', 'text': str(response)}]
+            ReplyMessageRequest(
+            reply_token=event.reply_token,
+            messages=[
+            TextMessage(text=response)
+            ]
+        )
             )
         
     except Exception as e:
