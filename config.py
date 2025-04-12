@@ -2,6 +2,8 @@ import os
 from dotenv import load_dotenv
 
 # 清除先前可能設定的環境變數
+os.environ.pop('LINE_CHANNEL_ACCESS_TOKEN', None)
+os.environ.pop('LINE_CHANNEL_SECRET', None)
 os.environ.pop('OLLAMA_MODEL', None)
 
 # 載入 .env 文件
