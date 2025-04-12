@@ -13,7 +13,7 @@ LINE_CHANNEL_SECRET = os.getenv('LINE_CHANNEL_SECRET', '')
 
 # Ollama 模型配置
 OLLAMA_MODEL = os.getenv('OLLAMA_MODEL', 'llama2:13b-chat')
-print("(config.py) 目前使用的模型是：", OLLAMA_MODEL)
+# print("(config.py) 目前使用的模型是：", OLLAMA_MODEL)
 # Webhook 配置
 WEBHOOK_URL = os.getenv('WEBHOOK_URL', 'http://localhost:5000/webhook')
 
