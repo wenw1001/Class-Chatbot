@@ -1,16 +1,19 @@
 import os
 from dotenv import load_dotenv
 
+# 清除先前可能設定的環境變數
+os.environ.pop('OLLAMA_MODEL', None)
+
 # 載入 .env 文件
-load_dotenv()
+load_dotenv("./.env")
 
 # Line Bot 配置
 LINE_CHANNEL_ACCESS_TOKEN = os.getenv('LINE_CHANNEL_ACCESS_TOKEN', '')
 LINE_CHANNEL_SECRET = os.getenv('LINE_CHANNEL_SECRET', '')
 
 # Ollama 模型配置
-OLLAMA_MODEL = os.getenv('OLLAMA_', 'deepseek-r1')
-
+OLLAMA_MODEL = os.getenv('OLLAMA_MODEL', 'llama2:13b-chat')
+print("(config.py) 目前使用的模型是：", OLLAMA_MODEL)
 # Webhook 配置
 WEBHOOK_URL = os.getenv('WEBHOOK_URL', 'http://localhost:5000/webhook')
 
