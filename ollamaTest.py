@@ -83,11 +83,14 @@ while True:
         break
 
     if user_input.strip().lower() == "memory mode":
+        if memory_mode == True:
+            print("你已在記憶模式，請重新輸入你的問題")
+            continue
         memory_mode = True
         print("-- 記憶模式已開啟 --")
         print("請輸入你的問題（輸入 memory mode off 關閉記憶模式，或輸入 exit 結束）：")
-        user_input = input("你：")
         history_messages = []
+        continue
     
     if user_input.strip().lower() == "memory mode off":
         if memory_mode:
