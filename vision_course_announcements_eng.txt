@@ -1,22 +1,21 @@
-Week	Date Range	Course Topic
-Week 1	2025/02/17–02/21	Course introduction, basic image processing concepts, reading and displaying grayscale images
-Week 2	2025/02/24–02/28	Basic operations in NumPy and OpenCV (matrix operations, image I/O, drawing)
-Week 3	2025/03/03–03/07	Convolution operations and edge detection (Sobel, Prewitt)
-Week 4	2025/03/10–03/14	Smoothing and blurring filters (mean filter, Gaussian filter)
-Week 5	2025/03/17–03/21	Basics of Convolutional Neural Networks (CNN) and their application in image classification
-Week 6	2025/03/24–03/28	Binarization and thresholding (including Otsu's method)
-Week 7	2025/03/31–04/04	Local operations: morphological operations (dilation, erosion, opening/closing)
-Week 8	2025/04/07–04/11	Geometric transformations (translation, rotation, scaling, affine, perspective)
-Week 9	2025/04/14–04/18	Midterm exam (2025/04/14, covering Weeks 1–8)
-Week 10	2025/04/21–04/25	Image contour detection and analysis (cv2.findContours, area/perimeter/approximation)
-Week 11	2025/04/28–05/02	Connected components analysis
-Week 12	2025/05/05–05/09	Edge detection and Hough Transform (Hough lines/circles)
-Week 13	2025/05/12–05/16	Color space conversion and image segmentation (BGR↔HSV, k-means segmentation)
-Week 14	2025/05/19–05/23	Feature detection and description (Harris, SIFT, ORB concepts)
-Week 15	2025/05/26–05/30	Project mentoring week (group discussions and progress checks)
-Week 16	2025/06/02–06/06	Image classification and shape recognition (basic CNN / logical shape classification)
-Week 17	2025/06/09–06/13	Final project presentations and summary preparation
-Week 18	2025/06/16–06/20	Final exam (2025/06/16, covering Weeks 10–16)
+Course topic of Week 1 [2025/02/17–02/21]:Course introduction, basic image processing concepts, reading and displaying grayscale images
+Course topic of Week 2 [2025/02/24–02/28]:Basic operations in NumPy and OpenCV (matrix operations, image I/O, drawing)
+Course topic of Week 3 [2025/03/03–03/07]:Convolution operations and edge detection (Sobel, Prewitt)
+Course topic of Week 4 [2025/03/10–03/14]:Smoothing and blurring filters (mean filter, Gaussian filter)
+Course topic of Week 5 [2025/03/17–03/21]:Basics of Convolutional Neural Networks (CNN) and their application in image classification
+Course topic of Week 6 [2025/03/24–03/28]:Binarization and thresholding (including Otsu's method)
+Course topic of Week 7 [2025/03/31–04/04]:Local operations: morphological operations (dilation, erosion, opening/closing)
+Course topic of Week 8 [2025/04/07–04/11]:Geometric transformations (translation, rotation, scaling, affine, perspective)
+Course topic of Week 9 [2025/04/14–04/18]:Midterm exam (held on 2025/04/14, covering Weeks 1–8)
+Course topic of Week 10	[2025/04/21–04/25]:Image contour detection and analysis (cv2.findContours, area/perimeter/approximation)
+Course topic of Week 11	[2025/04/28–05/02]:Connected components analysis
+Course topic of Week 12	[2025/05/05–05/09]:Edge detection and Hough Transform (Hough lines/circles)
+Course topic of Week 13	[2025/05/12–05/16]:Color space conversion and image segmentation (BGR↔HSV, k-means segmentation)
+Course topic of Week 14	[2025/05/19–05/23]:Feature detection and description (Harris, SIFT, ORB concepts)
+Course topic of Week 15	[2025/05/26–05/30]:Project mentoring week (group discussions and progress checks)
+Course topic of Week 16	[2025/06/02–06/06]:Image classification and shape recognition (basic CNN / logical shape classification)
+Course topic of Week 17	[2025/06/09–06/13]:Final project presentations and summary preparation
+Course topic of Week 18	[2025/06/16–06/20]:Final exam (held on 2025/06/16, covering Weeks 10–16)
 
 Announcement 1 [2025/03/10]:Class attendance will affect your final grade. Do not skip class or sign in for others without valid reasons.
 Announcement 2 [2025/03/12]:This week's class will cover the basic structure and applications of Convolutional Neural Networks (CNN). Please bring your laptop.
@@ -34,9 +33,9 @@ Announcement 13 [2025/06/10]:Final project presentation order has been announced
 Announcement 15 [2025/06/12]:This week’s lecture slides and examples have been uploaded to iStudy. Please download and read them.
 Announcement 16 [2025/06/13]:TA office hours have been updated. Consultation is available this Wednesday from 2 to 4 PM in Room R523.
 Announcement 17 [2025/06/14]:Regarding Homework 2, connectedComponentsWithStats() is for understanding only. Do not use it directly in your implementation.
-Announcement 18 [2025/06/14]:Next Monday (June 18), we’ll cover morphological operations in OpenCV. Please install OpenCV and review basic image operations.
+Announcement 18 [2025/06/14]:Next Monday (June 16), we’ll cover morphological operations in OpenCV. Please install OpenCV and review basic image operations.
 Announcement 19 [2025/06/15]:Homework 3 is due on June 21 at 23:59. The topic is “Object Contour Detection in Images.” Follow the submission format.
-Announcement 20 [2025/06/16]:The **final exam** will be held this Wednesday (2025/06/16), covering Weeks 10–16. Bring your student ID for verification.
+Announcement 20 [2025/06/16]:The **final exam** will be held this Wednesday (2025/06/18), covering Weeks 10–16. Bring your student ID for verification.
 
 Assignment 1: Basic Image Processing and Convolution Operations
 Objective:
