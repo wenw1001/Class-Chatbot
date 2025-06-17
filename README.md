@@ -29,6 +29,7 @@
 
 ## How to run?
 1. 開啟ngrok伺服器，參考 [官方文件](https://dashboard.ngrok.com/get-started/setup/windows)
+> windows 開啟程式`ngrok.exe`，輸入指令`ngrok http http://localhost:8080` 開啟伺服器
 2. 在 LINE Developer Console 的 Messaging API 設定頁面，將 Webhook URL 設為：`https://你的ngrok網址/你的webhook路徑`
 3. `pip install -r requirements.txt`，安裝相關套件
 4. 執行 `machine-vision-chatbot.py`
