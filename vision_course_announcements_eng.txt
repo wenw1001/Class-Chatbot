@@ -1,0 +1,84 @@
+Week	Date Range	Course Topic
+Week 1	2025/02/17–02/21	Course introduction, basic image processing concepts, reading and displaying grayscale images
+Week 2	2025/02/24–02/28	Basic operations in NumPy and OpenCV (matrix operations, image I/O, drawing)
+Week 3	2025/03/03–03/07	Convolution operations and edge detection (Sobel, Prewitt)
+Week 4	2025/03/10–03/14	Smoothing and blurring filters (mean filter, Gaussian filter)
+Week 5	2025/03/17–03/21	Basics of Convolutional Neural Networks (CNN) and their application in image classification
+Week 6	2025/03/24–03/28	Binarization and thresholding (including Otsu's method)
+Week 7	2025/03/31–04/04	Local operations: morphological operations (dilation, erosion, opening/closing)
+Week 8	2025/04/07–04/11	Geometric transformations (translation, rotation, scaling, affine, perspective)
+Week 9	2025/04/14–04/18	Midterm exam (2025/04/14, covering Weeks 1–8)
+Week 10	2025/04/21–04/25	Image contour detection and analysis (cv2.findContours, area/perimeter/approximation)
+Week 11	2025/04/28–05/02	Connected components analysis
+Week 12	2025/05/05–05/09	Edge detection and Hough Transform (Hough lines/circles)
+Week 13	2025/05/12–05/16	Color space conversion and image segmentation (BGR↔HSV, k-means segmentation)
+Week 14	2025/05/19–05/23	Feature detection and description (Harris, SIFT, ORB concepts)
+Week 15	2025/05/26–05/30	Project mentoring week (group discussions and progress checks)
+Week 16	2025/06/02–06/06	Image classification and shape recognition (basic CNN / logical shape classification)
+Week 17	2025/06/09–06/13	Final project presentations and summary preparation
+Week 18	2025/06/16–06/20	Final exam (2025/06/16, covering Weeks 10–16)
+
+Announcement 1 [2025/03/10]:Class attendance will affect your final grade. Do not skip class or sign in for others without valid reasons.
+Announcement 2 [2025/03/12]:This week's class will cover the basic structure and applications of Convolutional Neural Networks (CNN). Please bring your laptop.
+Announcement 3 [2025/03/14]:Homework 1 has been released. Please download it from the course platform. The deadline is 4/15 (Monday) at 23:59.
+Announcement 4 [2025/03/18]:You must write your own code for the assignments. Using pre-trained models or solutions is prohibited.
+Announcement 5 [2025/03/20]:Please follow the naming format for submissions, e.g., studentID_hw1.py.
+Announcement 6 [2025/03/25]:Course videos have been uploaded to the teaching platform. Please watch them and complete the video quiz this week.
+Announcement 7 [2025/04/01]:FAQs for Homework 1 are available. Check the announcements section to avoid repeated questions.
+Announcement 8 [2025/04/05]:A TA session will be held this Friday afternoon. Students with questions are welcome to attend.
+Announcement 9 [2025/04/08]:The **midterm exam** will be held next Monday (2025/04/14), covering the first eight weeks. Please prepare well.
+Announcement 10 [2025/05/01]:Please submit your final project topic by May 10, 2025. Refer to the attachment in the announcement for the required format.
+Announcement 11 [2025/06/08]:This week’s topic is “Edge Detection and Hough Transform.” Please preview the relevant math concepts.
+Announcement 12 [2025/06/09]:If you need to submit late assignments, email the instructor and TA in advance to explain the reason.
+Announcement 13 [2025/06/10]:Final project presentation order has been announced. Please submit your project proposal by next Friday.
+Announcement 15 [2025/06/12]:This week’s lecture slides and examples have been uploaded to iStudy. Please download and read them.
+Announcement 16 [2025/06/13]:TA office hours have been updated. Consultation is available this Wednesday from 2 to 4 PM in Room R523.
+Announcement 17 [2025/06/14]:Regarding Homework 2, connectedComponentsWithStats() is for understanding only. Do not use it directly in your implementation.
+Announcement 18 [2025/06/14]:Next Monday (June 18), we’ll cover morphological operations in OpenCV. Please install OpenCV and review basic image operations.
+Announcement 19 [2025/06/15]:Homework 3 is due on June 21 at 23:59. The topic is “Object Contour Detection in Images.” Follow the submission format.
+Announcement 20 [2025/06/16]:The **final exam** will be held this Wednesday (2025/06/16), covering Weeks 10–16. Bring your student ID for verification.
+
+Assignment 1: Basic Image Processing and Convolution Operations
+Objective:
+Understand basic image processing and become familiar with OpenCV and NumPy.
+Instructions:
+Write a program to read a grayscale image and perform:
+Sobel edge detection (x and y directions)
+Image blurring with a custom kernel
+Compare results from OpenCV and your own function
+Restrictions:
+Do not use cv2.Sobel(), cv2.filter2D(), or similar wrapper functions
+Only use basic NumPy (e.g., np.sum, np.mean, np.max, np.min, np.copy, np.reshape, np.expand_dims, np.squeeze, np.array, indexing) and OpenCV (e.g., cv2.imread, cv2.imwrite, cv2.imshow(), cv2.cvtColor, cv2.resize) functions.
+Read image from local folder; no UI or interactive input
+Deadline: April 15, 2025 (Mon) 23:59
+File format: studentID_hw1.py
+
+Assignment 2: Connected Components and Image Labeling
+Objective:
+Understand binary image component analysis and implement labeling and statistics.
+Instructions:
+Write a program to:
+Load a binary image and detect all connected components
+Compute area, bounding box, and centroid for each component
+Mark each component with a different color and output the result
+Restrictions:
+Do not use cv2.connectedComponents() or cv2.connectedComponentsWithStats()
+You must implement the search logic yourself (e.g., BFS or DFS)
+Only use basic NumPy (e.g., np.sum, np.mean, np.max, np.min, np.copy, np.reshape, np.expand_dims, np.squeeze, np.array, indexing) and OpenCV (e.g., cv2.imread, cv2.imwrite, cv2.imshow(), cv2.cvtColor, cv2.resize) functions.
+Deadline: June 17, 2025 (Tue) 23:59
+File format: studentID_hw2.py
+
+Assignment 3: Contour Detection and Shape Analysis
+Objective:
+Practice object contour detection, area calculation, and shape description.
+Instructions:
+Write a program to:
+Automatically binarize a grayscale image (Otsu allowed)
+Detect and draw all contours
+Compute area and perimeter of contours, and determine shape type (e.g., circle, rectangle)
+Restrictions:
+cv2.findContours() is allowed; shape classification logic must be implemented by you
+Only use basic NumPy (e.g., np.sum, np.mean, np.max, np.min, np.copy, np.reshape, np.expand_dims, np.squeeze, np.array, indexing) and OpenCV (e.g., cv2.imread, cv2.imwrite, cv2.imshow(), cv2.cvtColor, cv2.resize) functions.
+Do not use any ML models or external libraries (e.g., scikit-image)
+Deadline: June 21, 2025 (Sat) 23:59
+File format: studentID_hw3.py
