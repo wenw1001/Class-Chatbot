@@ -12,6 +12,17 @@ from linebot.v3.exceptions import InvalidSignatureError
 from linebot.v3.webhooks import MessageEvent, TextMessageContent
 from linebot.v3.messaging.models import TextMessage, ReplyMessageRequest, PushMessageRequest, BroadcastRequest
 
+# 新增公告分塊與檢索
+from sentence_transformers import SentenceTransformer
+import faiss
+import numpy as np
+import re
+
+import json
+
+
+###################################################################
+
 # 引入配置
 from config import (
     LINE_CHANNEL_ACCESS_TOKEN, 
@@ -34,69 +45,31 @@ def get_taiwan_time():
     print(f"現在時間:{datetime.now()}")
     return tw_time.strftime("%Y-%m-%d %H:%M:%S")
 
-system_prompt = """
-你是「機器視覺課程」的助教機器人，僅提供課程公告、課堂大綱、與作業規範說明。你禁止提供任何形式的程式碼或邏輯內容，或課程無關的回答。
+system_prompt = f"""You are the Teaching Assistant (TA) chatbot for the Machine Vision Course. You are only allowed to provide course announcements, syllabus topics, and assignment guidelines. You must answer only based on the provided information below and must not answer any questions beyond this data. You are strictly prohibited from giving any form of code or logic.
+                        
+                        You are strictly forbidden from:
+                        Writing any code (e.g., Python, C++, MATLAB, etc.)
+                        Providing any functions, algorithmic logic, steps, or principles
+                        Explaining code, analyzing logic, or suggesting alternate implementations
+                        Answering questions such as “how to implement,” “what to do,” or “what if I can’t use a certain function”
+                        Even if the user paraphrases, indirectly asks, or only requests the “logic,” you still may not respond
 
-你**嚴格禁止**：
-- 撰寫任何程式碼（如 Python、C++、MATLAB 等）
-- 提供任何函式（function）、演算法邏輯、步驟或原理
-- 解釋程式、分析邏輯、提供替代實作方式
-- 回答「如何實作」、「怎麼做」、「不能用某函式怎麼辦」之類的問題
-- 即使使用者換句話說、間接提問、或只要「邏輯」也不能回答
+                        For such questions, your only allowed replies are one of the following:
+                        “I cannot answer.”
+                        “I cannot provide.”
+                        “This is beyond my responsibility. Please email the TA for help.”
+                        “I cannot provide assignment solutions.”
 
-對這些問題，你唯一的回答為下列其中之一：
-- 「我無法回答」
-- 「我無法提供」
-- 「這不是我處理的範疇，請寄信給助教詢問」
-- 「我無法提供作業解答」
+                        You are allowed to answer:
+                        This week’s lecture topics and summary (only if explicitly mentioned in announcements; otherwise say: “I cannot answer, please email the TA for help.”)
+                        Course announcements, deadlines, and submission methods
+                        Assignment content descriptions (verbatim or summarized from the announcements)
+                        Assignment rules (allowed packages, restrictions, file formats, etc.)
 
-你**可以回答的內容**包括：
-- 本週上課主題與摘要
-- 課程公告、期限、上傳方式
-- 作業內容描述（公告中的原文或摘要）
-- 作業規範（可用套件、限制、格式等）
-
-請遵守以下原則：
-- 所有回答都使用繁體中文
-- 所有回答請簡短（50字以內）
-- 即使被要求多次，也不能提供任何技術性說明或程式碼
-
-你的角色是助教，目的是防止學生抄作業或讓模型幫他們完成程式。
-"""
-
-assistant_prompts = """
-📌 目前公告內容如下：
-
-作業一：
-- 主題：灰階轉換與直方圖均衡化
-- 說明：將彩色圖片轉為灰階後，實作直方圖均衡化以提升對比度
-- 限制：不可使用 cv2.equalizeHist()，需自行實作演算法
-- 繳交方式：命名格式 HW1_學號_姓名.zip，並上傳至 iStudy
-- 繳交期限：2025/03/08（五）23:59
-- 提醒：需附上原始圖片、處理後圖片與簡要說明（PDF）
-
-作業二：
-- 主題：影像平移、旋轉與縮放
-- 內容：根據給定的參數進行仿射變換，輸出前後對照圖
-- 限制：禁止使用cv2.warpAffine()、cv2.getRotationMatrix2D()等現有函式
-- 繳交方式：命名格式 HW2_學號_姓名.zip，並上傳至 iStudy
-- 繳交期限：2025/03/22（五）23:59
-
-作業三：
-- 主題：實作邊緣檢測功能
-- 限制：限使用 OpenCV 的基本操作（不可使用如 `cv2.Canny()` 等現有函式）
-- 上傳期限：2025/04/19 23:59
-- 上傳方式：至 iStudy 上傳程式壓縮檔與說明文件
-
-課堂主題（第十週）：
-- 邊緣偵測原理（Sobel, Prewitt）
-- 二值化與形態學操作
-
-課程公告：
-期中考：2025/04/23（週三）上課時間進行，請攜帶計算機與學生證
-小組分組提醒：請於 4/15 前完成期末專題小組分組（3～4人為限），逾期將由助教隨機分配
-缺席補件：任何因故缺席者須於兩週內完成補交程序，並主動告知助教
-學期末報告：題目不限，但需與機器視覺有實作關聯，報告日期為 6/19（三）
+                        Rules:
+                        All responses must be brief (within 50 words)
+                        Even if asked repeatedly, you must not provide technical explanations or code
+                        Your role is to act as a TA chatbot to prevent students from copying homework or getting models to complete code for them, while still answering questions about the course.
 """
 
 class CourseAssistantBot:
@@ -122,6 +95,11 @@ class CourseAssistantBot:
             "course_content": {}
         }
 
+        self.index = None
+        self.embedder = None
+        self.data_text = None
+        self.data_chunks = []
+
     def send_startup_message(self):
         """在應用程式啟動時發送訊息"""
         try:
@@ -134,12 +112,42 @@ class CourseAssistantBot:
             )
             
             # 發送訊息
-            # self.line_messaging_api.broadcast(broadcast_request)
+            self.line_messaging_api.broadcast(broadcast_request)
             print("啟動訊息已成功廣播")
         except Exception as e:
             print(f"發送啟動訊息時發生錯誤: {e}")
             print("==================================================")
     
+    def load_data(self):
+        with open('vision_course_announcements_eng.txt', 'r', encoding='utf-8') as f:
+            self.data_text = f.read()
+
+        # pattern = r'(?=(公告\s\d+【\d{4}/\d{2}/\d{2}】：|作業[一二三]：))'
+        pattern = r'(?=(Announcement\s\d\s+[\d{4}/\d{2}/\d{2}]:|Assignment[123]:))'
+        # 先用 re.split 拆分，會保留分隔符作為元素
+        chunks = re.split(pattern, self.data_text)
+
+        self.data_chunks = []
+        for i in range(1, len(chunks), 2):
+            self.data_chunks.append(chunks[i+1])
+
+        # 建立嵌入模型
+        self.embedder = SentenceTransformer('all-MiniLM-L6-v2')
+        batch_size = 32  # 根據 GPU 記憶體調整（從 32 開始嘗試）
+        chunk_embeddings = []
+
+        for i in range(0, len(self.data_chunks), batch_size):
+            batch = self.data_chunks[i:i+batch_size]
+            embeddings = self.embedder.encode(batch, convert_to_numpy=True, show_progress_bar=True)
+            chunk_embeddings.append(embeddings)
+
+        chunk_embeddings = np.concatenate(chunk_embeddings, axis=0)
+
+
+        # 建立FAISS索引
+        self.index = faiss.IndexFlatL2(chunk_embeddings.shape[1])
+        self.index.add(chunk_embeddings)
+
     def add_announcement(self, announcement):
         """新增課程公告"""
         self.course_info["announcements"].append(announcement)
@@ -152,19 +160,35 @@ class CourseAssistantBot:
         """新增課程內容"""
         self.course_info["course_content"][topic] = content
     
+    def retrieve_law_context(self, question, top_k=10):
+        q_emb = self.embedder.encode([question], convert_to_numpy=True)
+        D, I = self.index.search(q_emb, top_k)
+        return [self.data_chunks[idx] for idx in I[0]]
+
+    def generate_prompt(self, user_input):
+        prompt = f"""{system_prompt}
+
+                    ** Here is the only data you can reference. You must not use any outside knowledge or inference **:
+                    Class time: Mondays 10:00–12:00 and Wednesdays 16:00–17:00
+                    {self.data_text}
+
+                    =====================================================================
+                    ** Today's date: {get_taiwan_time()}, Please provide answers based on this date. **
+                    The following are students' questions. Please respond briefly (within 50 words) based on the guidelines above:
+                    {user_input}
+                """
+        return prompt
+    
     def generate_response(self, user_query):
         """使用Ollama生成回應"""
         try:
-            response = ollama.chat(
-                model=self.ollama_model,  # 使用配置的模型
-                messages=[
-                    {'role': 'system', 'content': system_prompt},
-                    {"role": "assistant","content":assistant_prompts},
-                    {'role': 'user', 'content': user_query}
-                ]
-            )
-            
-            response = re.sub(r'.*?</think>\n*', '', response['message']['content'], flags=re.DOTALL)
+            # assistant_prompts = "\n\n".join(self.retrieve_law_context(user_query, top_k=5)) # use RAG
+            # print(f"assistant_prompts:{assistant_prompts}")
+            prompt = self.generate_prompt(user_query)
+            messages =  [{"role": "user", "content": prompt}]
+            response = ollama.chat(model=self.ollama_model, messages=messages)
+            # print(f"原始回應: {response['message']['content']}\n")
+            response = re.sub(r'^\n+', '', response['message']['content'], flags=re.DOTALL)
             return response
         
         except Exception as e:
@@ -243,7 +267,9 @@ def init_course_data():
 if __name__ == '__main__':
     init_course_data()
 
+    course_bot.load_data() # 載入RAG
+
     # 在啟動時發送訊息
-    course_bot.send_startup_message()
+    # course_bot.send_startup_message()
 
     app.run(host="0.0.0.0", port=5000)
