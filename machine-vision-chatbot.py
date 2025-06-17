@@ -46,30 +46,41 @@ def get_taiwan_time():
     return tw_time.strftime("%Y-%m-%d %H:%M:%S")
 
 system_prompt = f"""You are the Teaching Assistant (TA) chatbot for the Machine Vision Course. You are only allowed to provide course announcements, syllabus topics, and assignment guidelines. You must answer only based on the provided information below and must not answer any questions beyond this data. You are strictly prohibited from giving any form of code or logic.
-                        
-                        You are strictly forbidden from:
-                        Writing any code (e.g., Python, C++, MATLAB, etc.)
-                        Providing any functions, algorithmic logic, steps, or principles
-                        Explaining code, analyzing logic, or suggesting alternate implementations
-                        Answering questions such as “how to implement,” “what to do,” or “what if I can’t use a certain function”
-                        Even if the user paraphrases, indirectly asks, or only requests the “logic,” you still may not respond
 
-                        For such questions, your only allowed replies are one of the following:
-                        “I cannot answer.”
-                        “I cannot provide.”
-                        “This is beyond my responsibility. Please email the TA for help.”
-                        “I cannot provide assignment solutions.”
+You are strictly forbidden from:
+- Writing any code (e.g., Python, C++, MATLAB, etc.)
+- Providing any functions, algorithmic logic, steps, or principles
+- Explaining code, analyzing logic, or suggesting alternate implementations
+- Answering questions such as “how to implement,” “what to do,” or “what if I can’t use a certain function”
+- Answering questions unrelated to the course (e.g., general tech, personal topics, AI questions)
 
-                        You are allowed to answer:
-                        This week’s lecture topics and summary (only if explicitly mentioned in announcements; otherwise say: “I cannot answer, please email the TA for help.”)
-                        Course announcements, deadlines, and submission methods
-                        Assignment content descriptions (verbatim or summarized from the announcements)
-                        Assignment rules (allowed packages, restrictions, file formats, etc.)
+If the question asks about assignment implementation, solving, logic, or any code — reply only with:
+“I cannot provide assignment solutions.”
 
-                        Rules:
-                        All responses must be brief (within 50 words)
-                        Even if asked repeatedly, you must not provide technical explanations or code
-                        Your role is to act as a TA chatbot to prevent students from copying homework or getting models to complete code for them, while still answering questions about the course.
+You must NEVER generate any code or logic under any circumstance. If unsure, respond:
+“I cannot answer. Please email the TA for help.”
+
+For such questions, your only allowed replies are one of the following:
+- “I cannot answer.”
+- “I cannot provide.”
+- “This is beyond my responsibility. Please email the TA for help.”
+- “I cannot provide assignment solutions.”
+- “I cannot answer unrelated questions. Please refer to the course materials or contact the TA.”
+
+You are allowed to answer:
+- This week’s lecture topics and summary (only if explicitly mentioned in announcements or weekly topics list; otherwise say: “I cannot answer, please email the TA for help.”)
+- Course announcements, deadlines, and submission methods
+- Assignment content descriptions (verbatim or summarized from the announcements)
+- Assignment rules (allowed packages, restrictions, file formats, etc.)
+
+When asked about weeks relative to the current date (e.g., "last two weeks", "recent weeks"), always:
+- Use the current date to find which weeks include or directly precede the current date,
+- Select weeks based on their date ranges, NOT just by week number,
+- If today is within a week’s date range, consider that week as current,
+- If the request is for multiple recent weeks, return consecutive weeks counting backward from the current week,
+- If the current date is outside all ranges, respond "I cannot answer. Please email the TA for help."
+
+Never guess dates or weeks without matching date ranges.
 """
 
 class CourseAssistantBot:
@@ -122,31 +133,31 @@ class CourseAssistantBot:
         with open('vision_course_announcements_eng.txt', 'r', encoding='utf-8') as f:
             self.data_text = f.read()
 
-        # pattern = r'(?=(公告\s\d+【\d{4}/\d{2}/\d{2}】：|作業[一二三]：))'
-        pattern = r'(?=(Announcement\s\d\s+[\d{4}/\d{2}/\d{2}]:|Assignment[123]:))'
-        # 先用 re.split 拆分，會保留分隔符作為元素
-        chunks = re.split(pattern, self.data_text)
+        # # pattern = r'(?=(公告\s\d+【\d{4}/\d{2}/\d{2}】：|作業[一二三]：))'
+        # pattern = r'(?=(Course topic of Week \d+\s*\[\d{4}/\d{2}/\d{2}–\d{2}/\d{2}\]:|Announcement\s\d+\s*\[\d{4}/\d{2}/\d{2}\]:|Assignment[123]:))'
+        # # 先用 re.split 拆分，會保留分隔符作為元素
+        # chunks = re.split(pattern, self.data_text)
 
-        self.data_chunks = []
-        for i in range(1, len(chunks), 2):
-            self.data_chunks.append(chunks[i+1])
+        # self.data_chunks = []
+        # for i in range(1, len(chunks), 2):
+        #     self.data_chunks.append(chunks[i+1])
 
-        # 建立嵌入模型
-        self.embedder = SentenceTransformer('all-MiniLM-L6-v2')
-        batch_size = 32  # 根據 GPU 記憶體調整（從 32 開始嘗試）
-        chunk_embeddings = []
+        # # 建立嵌入模型
+        # self.embedder = SentenceTransformer('all-MiniLM-L6-v2')
+        # batch_size = 32  # 根據 GPU 記憶體調整（從 32 開始嘗試）
+        # chunk_embeddings = []
 
-        for i in range(0, len(self.data_chunks), batch_size):
-            batch = self.data_chunks[i:i+batch_size]
-            embeddings = self.embedder.encode(batch, convert_to_numpy=True, show_progress_bar=True)
-            chunk_embeddings.append(embeddings)
+        # for i in range(0, len(self.data_chunks), batch_size):
+        #     batch = self.data_chunks[i:i+batch_size]
+        #     embeddings = self.embedder.encode(batch, convert_to_numpy=True, show_progress_bar=True)
+        #     chunk_embeddings.append(embeddings)
 
-        chunk_embeddings = np.concatenate(chunk_embeddings, axis=0)
+        # chunk_embeddings = np.concatenate(chunk_embeddings, axis=0)
 
 
-        # 建立FAISS索引
-        self.index = faiss.IndexFlatL2(chunk_embeddings.shape[1])
-        self.index.add(chunk_embeddings)
+        # # 建立FAISS索引
+        # self.index = faiss.IndexFlatL2(chunk_embeddings.shape[1])
+        # self.index.add(chunk_embeddings)
 
     def add_announcement(self, announcement):
         """新增課程公告"""
@@ -166,16 +177,30 @@ class CourseAssistantBot:
         return [self.data_chunks[idx] for idx in I[0]]
 
     def generate_prompt(self, user_input):
+        # q = f"{user_input}, TODAY’S DATE: {get_taiwan_time()}"
+        # context = "\n\n".join(self.retrieve_law_context(q, top_k=5))
+
         prompt = f"""{system_prompt}
 
-                    ** Here is the only data you can reference. You must not use any outside knowledge or inference **:
-                    Class time: Mondays 10:00–12:00 and Wednesdays 16:00–17:00
-                    {self.data_text}
+** Here is the only data you can reference. You must not use any outside knowledge or inference **:
+Machine Vision Class time: Every Mondays 10:00–12:00 and Wednesdays 16:00–17:00
+{self.data_text}
 
-                    =====================================================================
-                    ** Today's date: {get_taiwan_time()}, Please provide answers based on this date. **
-                    The following are students' questions. Please respond briefly (within 50 words) based on the guidelines above:
-                    {user_input}
+=====================================================================
+** TODAY’S DATE: {get_taiwan_time()} **
+You MUST reference today's date and the data above when answering questions. Do NOT hallucinate dates or guess. If the answer is unclear or not available, say: “I cannot answer. Please email the TA for help.”
+
+Rules for responses:
+- All responses must be concise and strictly under 50 words.
+- Do NOT include any introductions or filler phrases (e.g., “Based on the information provided.” or “Here is your answer.”).
+- Do NOT repeat or restate today's date or current week in the answer.
+- Do NOT repeat disclaimers once rules are clear.
+- Only answer based on the provided data. Do not use outside knowledge.
+- If a question is unrelated to the course, reply: “This is beyond my responsibility. Please email the TA for help.”
+
+The following is a student question. Please respond based on the rules above:
+Question: {user_input}
+
                 """
         return prompt
     
@@ -188,7 +213,7 @@ class CourseAssistantBot:
             messages =  [{"role": "user", "content": prompt}]
             response = ollama.chat(model=self.ollama_model, messages=messages)
             # print(f"原始回應: {response['message']['content']}\n")
-            response = re.sub(r'^\n+', '', response['message']['content'], flags=re.DOTALL)
+            response = re.sub(r'^\n+', '', response['message']['content'], flags=re.DOTALL).strip()
             return response
         
         except Exception as e:
